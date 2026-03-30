@@ -2,7 +2,7 @@
 
 These are patterns I picked up building a full product with Claude Code over hundreds of hours. They're not rules. They're notes -- things that worked for me, things that surprised me, things I wish someone had told me on day one. Take what's useful, ignore what isn't.
 
-The product in question is a real financial simulation platform -- backend, frontend, plugins, database, deployment, the whole stack. These patterns weren't designed in advance. They emerged from getting burned enough times to change behavior.
+The product in question is [Finlet](https://github.com/justnau1020/finlet) -- a financial simulation platform I built almost entirely with Claude Code. Backend, frontend, plugins, database, deployment, the whole stack. These patterns weren't designed in advance. They emerged from getting burned enough times to change behavior.
 
 If you want the formalized version of these ideas, check out the [framework](./framework/) directory. What follows is the informal, opinionated version.
 
@@ -26,9 +26,6 @@ Multiple agents editing the same repo will cause merge conflicts that waste more
 **Error messages are interfaces.**
 "API error" helps nobody -- not you, not the agent trying to recover from it. "Service X rate limit exceeded: 0/60 calls remaining, resets in 42 seconds" lets the agent (or you) make a decision. I treat error messages like I treat UI copy -- they should be specific, actionable, and tell you exactly what happened and what to do about it.
 
-**Don't ask, just do.**
-If you're running Claude Code in a mode where it asks "should I proceed?" after every step, you're babysitting, not automating. Set up your permissions and trust boundaries so the agent can execute. Review the output, not the intent. The confirmation prompts exist for safety, and that's good -- but once you've established trust in a workflow, the friction of constant approval requests kills the speed advantage of using an agent in the first place.
-
 **Skills over prompts.**
 Anything you've typed more than twice belongs in a skill file. Skills are version-controlled, shareable, and consistent. Prompts are ephemeral -- they live in your clipboard or your memory, both of which are unreliable. I have 20+ skills now and my prompts are usually just "do /thing." The upfront cost of writing a skill pays for itself after the second use.
 
@@ -43,6 +40,9 @@ Long sessions trigger automatic context compression. If you don't explicitly tel
 
 **The framework scales down.**
 These patterns work best with high token budgets, but the core idea -- keep main context lean, delegate, summarize -- helps on any plan. Start with single-agent delegation: instead of reading a file yourself, spawn one agent to read it and summarize. That alone will extend your sessions. Add parallelism and agent teams when your budget allows it.
+
+**The lean context framework.**
+Tips 2 through 5 above are pieces of a single idea that changed how I work. I call it the lean context framework, and the formalized version lives in the [framework directory](./framework/). The short version: your main Claude Code session is a team lead. It understands what you want, decides who does the work, and keeps summaries. It never reads files, never writes code, never runs tests. Every task -- even a quick file check -- gets delegated to a subagent or agent team that works in its own context. The result comes back as a summary, not raw output. This means your main context stays small, focused, and high-quality for the entire session. I've had 3-hour sessions stay sharp because the main context never exceeded a few hundred lines. Before this pattern, quality would degrade after 30 minutes. If you take one thing from these notes, take this.
 
 ---
 
