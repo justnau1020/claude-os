@@ -41,6 +41,9 @@ Long sessions trigger automatic context compression. If you don't explicitly tel
 **The framework scales down.**
 These patterns work best with high token budgets, but the core idea -- keep main context lean, delegate, summarize -- helps on any plan. Start with single-agent delegation: instead of reading a file yourself, spawn one agent to read it and summarize. That alone will extend your sessions. Add parallelism and agent teams when your budget allows it.
 
+**Run a watchdog when you run a team.**
+When you spin up an agent team, spawn a dedicated watchdog agent alongside it. Teammates sometimes idle and stay running after their work is done -- they can't message the team lead to say "I'm finished" or shut themselves down in every case. I've had agents sit there burning tokens doing nothing. A watchdog monitors the batch, flags stalled agents, and dies when the batch is done. Cheap insurance.
+
 **The lean context framework.**
 Tips 2 through 5 above are pieces of a single idea that changed how I work. I call it the lean context framework, and the formalized version lives in the [framework directory](./framework/). The short version: your main Claude Code session is a team lead. It understands what you want, decides who does the work, and keeps summaries. It never reads files, never writes code, never runs tests. Every task -- even a quick file check -- gets delegated to a subagent or agent team that works in its own context. The result comes back as a summary, not raw output. This means your main context stays small, focused, and high-quality for the entire session. I've had 3-hour sessions stay sharp because the main context never exceeded a few hundred lines. Before this pattern, quality would degrade after 30 minutes. If you take one thing from these notes, take this.
 
