@@ -6,6 +6,12 @@ Born from hundreds of hours of real production use. Every anti-pattern documente
 
 ---
 
+## Notes
+
+[Things I learned building with Claude Code](./NOTES.md) -- informal patterns and observations from building a production app with these tools. Start here if you're new.
+
+---
+
 ## The Framework
 
 The core idea is simple: **your main chat agent is a team lead, not a worker.**
