@@ -2,7 +2,7 @@
 
 These are patterns I picked up building a full product with Claude Code over hundreds of hours. They're not rules. They're notes -- things that worked for me, things that surprised me, things I wish someone had told me on day one. Take what's useful, ignore what isn't.
 
-The product in question is [Finlet](https://github.com/justnau1020/finlet) -- a financial simulation platform I built almost entirely with Claude Code. Backend, frontend, plugins, database, deployment, the whole stack. These patterns weren't designed in advance. They emerged from getting burned enough times to change behavior.
+The product in question is [Finlet](https://finlet.dev) -- a financial simulation platform I built almost entirely with Claude Code. Backend, frontend, plugins, database, deployment, the whole stack. These patterns weren't designed in advance. They emerged from getting burned enough times to change behavior.
 
 If you want the formalized version of these ideas, check out the [framework](./framework/) directory. What follows is the informal, opinionated version.
 
