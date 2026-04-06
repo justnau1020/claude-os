@@ -1,14 +1,36 @@
-# Lean Context Framework
+# claude-os
 
-A collection of battle-tested Claude Code skills and an agent execution framework for keeping your main context window clean while orchestrating complex, multi-agent workflows.
+An operating system for Claude Code. Skills, hooks, and a framework for making Claude Code sessions smarter, leaner, and persistent.
 
 Born from hundreds of hours of real production use. Every anti-pattern documented here destroyed real work at least once before it was caught.
 
 ---
 
+## What's Here
+
+| Layer | What | Where |
+|-------|------|-------|
+| **Hooks** | Infrastructure that runs silently on every interaction | `hooks/` |
+| **Skills** | Slash commands for orchestrating complex workflows | `skills/` |
+| **Framework** | Agent execution model, file ownership, conventions | `framework/` |
+
+---
+
+## MCR (Model Context Retrieval) — NEW
+
+A "subconscious brain" for Claude Code. Hooks that automatically inject relevant knowledge from a personal vault into every conversation — without Claude searching for it.
+
+**Two layers:**
+- **Layer 1:** `UserPromptSubmit` hook matches your prompt against a knowledge vault and injects context before Claude sees your message
+- **Layer 2:** `PreToolUse` hook intercepts tool calls (Read, Grep, WebSearch) as *need signals* and injects relevant vault context alongside tool results
+
+[Full docs and setup →](./hooks/mcr/README.md)
+
+---
+
 ## Notes
 
-[Things I learned building with Claude Code](./NOTES.md) -- informal patterns and observations from building a production app with these tools. Start here if you're new.
+[Things I learned building with Claude Code](./NOTES.md) — informal patterns and observations from building a production app with these tools. Start here if you're new.
 
 ---
 
@@ -16,15 +38,15 @@ Born from hundreds of hours of real production use. Every anti-pattern documente
 
 The core idea is simple: **your main chat agent is a team lead, not a worker.**
 
-Every task -- coding, research, exploration, testing, even reading files -- gets delegated to subagents or agent teams. The main agent's context window stays lean, which means:
+Every task — coding, research, exploration, testing, even reading files — gets delegated to subagents or agent teams. The main agent's context window stays lean, which means:
 - You can run longer sessions without hitting context limits
-- You can chain multiple skills in one session (`/brainstorm` -> `/plan-features` -> `/exec-plan`)
+- You can chain multiple skills in one session (`/brainstorm` → `/plan-features` → `/exec-plan`)
 - Each delegated agent gets a fresh, focused context window
 
 The framework lives in `framework/` and includes:
-- **`CLAUDE.md`** -- Drop-in template for your project's `.claude/CLAUDE.md`. Includes the agent execution model, file ownership template, and code conventions template.
-- **`rules/agent-execution.md`** -- Auto-loaded rule that enforces lean-context discipline on every conversation.
-- **`rules/file-ownership.md`** -- Template for mapping directories to team names, preventing merge conflicts during parallel execution.
+- **`CLAUDE.md`** — Drop-in template for your project's `.claude/CLAUDE.md`. Includes the agent execution model, file ownership template, and code conventions template.
+- **`rules/agent-execution.md`** — Auto-loaded rule that enforces lean-context discipline on every conversation.
+- **`rules/file-ownership.md`** — Template for mapping directories to team names, preventing merge conflicts during parallel execution.
 
 ## Skills Catalog
 
