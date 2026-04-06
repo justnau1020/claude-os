@@ -2,9 +2,6 @@
 MCR (Model Context Retrieval) — Shared Library
 Automatic context injection for Claude Code via hooks.
 Pure stdlib Python, no dependencies.
-
-Configuration:
-  Set MCR_VAULT_PATH env var or defaults to ~/obsidian-vault
 """
 
 import json
@@ -13,7 +10,7 @@ import re
 import sys
 from math import log2
 
-VAULT_PATH = os.environ.get("MCR_VAULT_PATH", os.path.expanduser("~/obsidian-vault"))
+VAULT_PATH = os.path.expanduser("~/obsidian-vault")
 INDEX_PATH = os.path.join(VAULT_PATH, ".mcr", "index.json")
 
 STOPWORDS = frozenset({
@@ -90,6 +87,7 @@ def tokenize_query(text, max_chars=2000):
     tokens = [t for t in _TOKEN_RE.findall(text) if t not in STOPWORDS]
 
     result = set(tokens)
+    # Generate bigrams for compound matching
     for i in range(len(tokens) - 1):
         result.add(f"{tokens[i]} {tokens[i+1]}")
 
@@ -124,13 +122,16 @@ def match_terms(tokens, index):
             scores[fp] = scores.get(fp, 0.0) + w
             match_counts[fp] = match_counts.get(fp, 0) + 1
 
+    # Apply breadth bonus: reward files matching multiple different tokens
     for fp in scores:
         n = match_counts[fp]
         if n > 1:
             scores[fp] *= (1.0 + 0.3 * log2(n))
 
+    # Filter below threshold
     results = [(fp, sc) for fp, sc in scores.items() if sc >= 1.0]
 
+    # Sort: score desc, then smaller files first (tie-break), then alphabetical
     def sort_key(item):
         fp, sc = item
         char_count = files_meta.get(fp, {}).get("char_count", 99999)
@@ -161,6 +162,7 @@ def read_vault_files(matches, char_budget, max_files=5):
         except OSError:
             continue
 
+        # Strip frontmatter for injection (Claude doesn't need the YAML)
         _, body = parse_frontmatter(content)
         body = body.strip()
 
@@ -175,6 +177,7 @@ def read_vault_files(matches, char_budget, max_files=5):
             parts.append(f"{header}{body}{footer}")
             remaining -= len(body) + overhead
         else:
+            # Truncate to fit
             available = remaining - overhead - 50
             if available < 100:
                 break

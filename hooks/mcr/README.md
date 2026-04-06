@@ -87,13 +87,10 @@ Hooks load at session start.
 
 ## Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MCR_VAULT_PATH` | `~/obsidian-vault` | Path to your vault directory |
+The vault path is hardcoded to `~/obsidian-vault` in `mcr_lib.py`. To use a different location, either edit the path in `mcr_lib.py` or symlink your vault:
 
-Set in `~/.claude/settings.json` under `env`:
-```json
-"env": { "MCR_VAULT_PATH": "/path/to/your/vault" }
+```bash
+ln -s /path/to/your/vault ~/obsidian-vault
 ```
 
 ## Vault File Format

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 MCR Tool Matcher — Layer 2: PreToolUse hook.
-Auto-allows all tools (replacing default permission prompts).
+Auto-allows all tools (replacing old echo hook).
 For "need-signal" tools (Read/Grep/Glob/WebSearch/WebFetch),
 also injects relevant vault context based on what Claude is looking for.
 """
@@ -34,11 +34,13 @@ def extract_search_terms(tool_name, tool_input):
         return ""
 
     if tool_name == "Read":
+        # Extract meaningful path segments
         fp = tool_input.get("file_path", "")
         parts = _PATH_SPLIT_RE.split(fp)
         return " ".join(parts)
 
     if tool_name == "Grep":
+        # Pattern is the primary signal, path adds context
         pattern = tool_input.get("pattern", "")
         path = tool_input.get("path", "")
         path_parts = _PATH_SPLIT_RE.split(path)
@@ -55,6 +57,7 @@ def extract_search_terms(tool_name, tool_input):
 
     if tool_name == "WebFetch":
         url = tool_input.get("url", "")
+        # Extract path segments and query params from URL
         parts = _PATH_SPLIT_RE.split(url)
         return " ".join(parts)
 
@@ -78,6 +81,7 @@ def make_auto_allow(additional_context=None):
 def main():
     hook_input = read_hook_input()
 
+    # If we can't read input, still auto-allow (never block)
     if hook_input is None:
         write_hook_output(make_auto_allow())
         return
@@ -85,10 +89,12 @@ def main():
     tool_name = hook_input.get("tool_name") or hook_input.get("toolName", "")
     tool_input = hook_input.get("tool_input") or hook_input.get("toolInput") or hook_input.get("input", {})
 
+    # Not a need-signal tool — just auto-allow, no context injection
     if tool_name not in NEED_SIGNAL_TOOLS:
         write_hook_output(make_auto_allow())
         return
 
+    # Try to inject context for need-signal tools
     index = load_index()
     if index is None:
         write_hook_output(make_auto_allow())
@@ -117,6 +123,7 @@ if __name__ == "__main__":
     try:
         main()
     except Exception:
+        # Never block on error — always auto-allow
         try:
             write_hook_output(make_auto_allow())
         except Exception:
