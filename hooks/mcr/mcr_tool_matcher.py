@@ -17,6 +17,8 @@ from mcr_lib import (
     load_index,
     tokenize_query,
     match_terms,
+    filter_matches,
+    record_injected,
     build_context_string,
 )
 
@@ -115,7 +117,15 @@ def main():
         write_hook_output(make_auto_allow())
         return
 
-    context = build_context_string(matches, CONTENT_BUDGET)
+    session_id = hook_input.get("session_id", "")
+    matches = filter_matches(matches, session_id=session_id)
+    if not matches:
+        write_hook_output(make_auto_allow())
+        return
+
+    context, injected = build_context_string(matches, CONTENT_BUDGET)
+    if injected and session_id:
+        record_injected(injected, session_id)
     write_hook_output(make_auto_allow(context if context else None))
 
 

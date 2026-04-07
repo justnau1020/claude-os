@@ -15,6 +15,8 @@ from mcr_lib import (
     load_index,
     tokenize_query,
     match_terms,
+    filter_matches,
+    record_injected,
     build_context_string,
 )
 
@@ -42,9 +44,16 @@ def main():
     if not matches:
         safe_exit_empty()
 
-    context = build_context_string(matches, CONTENT_BUDGET)
+    session_id = hook_input.get("session_id", "")
+    matches = filter_matches(matches, session_id=session_id)
+    if not matches:
+        safe_exit_empty()
+
+    context, injected = build_context_string(matches, CONTENT_BUDGET)
     if not context:
         safe_exit_empty()
+
+    record_injected(injected, session_id)
 
     output = {
         "hookSpecificOutput": {

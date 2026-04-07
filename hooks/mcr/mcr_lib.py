@@ -8,6 +8,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 from math import log2
 
 VAULT_PATH = os.path.expanduser("~/obsidian-vault")
@@ -128,8 +129,8 @@ def match_terms(tokens, index):
         if n > 1:
             scores[fp] *= (1.0 + 0.3 * log2(n))
 
-    # Filter below threshold
-    results = [(fp, sc) for fp, sc in scores.items() if sc >= 1.0]
+    # Filter below minimum threshold
+    results = [(fp, sc) for fp, sc in scores.items() if sc >= 3.0]
 
     # Sort: score desc, then smaller files first (tie-break), then alphabetical
     def sort_key(item):
@@ -141,14 +142,67 @@ def match_terms(tokens, index):
     return results
 
 
+# --- Session Deduplication ---
+
+SEEN_DIR = os.path.join(tempfile.gettempdir(), "mcr_sessions")
+
+
+def _seen_path(session_id):
+    return os.path.join(SEEN_DIR, f"seen_{session_id}.json")
+
+
+def load_seen_files(session_id):
+    """Load set of vault files already injected this session."""
+    if not session_id:
+        return set()
+    try:
+        with open(_seen_path(session_id), "r") as f:
+            return set(json.load(f))
+    except (OSError, json.JSONDecodeError):
+        return set()
+
+
+def record_injected(files, session_id):
+    """Record which files were injected so they aren't repeated."""
+    if not session_id or not files:
+        return
+    seen = load_seen_files(session_id)
+    seen.update(files)
+    try:
+        os.makedirs(SEEN_DIR, exist_ok=True)
+        with open(_seen_path(session_id), "w") as f:
+            json.dump(sorted(seen), f)
+    except OSError:
+        pass
+
+
+def filter_matches(matches, session_id=None):
+    """Apply relative threshold and session deduplication."""
+    if not matches:
+        return []
+
+    # Relative threshold: only keep files within 30% of top score
+    top_score = matches[0][1]
+    rel_floor = top_score * 0.3
+    matches = [(fp, sc) for fp, sc in matches if sc >= rel_floor]
+
+    # Dedup: skip files already injected this session
+    if session_id:
+        seen = load_seen_files(session_id)
+        matches = [(fp, sc) for fp, sc in matches if fp not in seen]
+
+    return matches
+
+
 # --- File Reading with Budget ---
 
 def read_vault_files(matches, char_budget, max_files=5):
-    """Read matched vault files within character budget. Returns formatted string."""
+    """Read matched vault files within character budget. Returns (formatted_string, list_of_injected_paths)."""
     if not matches:
-        return ""
+        return "", []
 
     parts = []
+    injected = []
     remaining = char_budget
 
     for fp, _score in matches[:max_files]:
@@ -176,6 +230,7 @@ def read_vault_files(matches, char_budget, max_files=5):
         if len(body) + overhead <= remaining:
             parts.append(f"{header}{body}{footer}")
             remaining -= len(body) + overhead
+            injected.append(fp)
         else:
             # Truncate to fit
             available = remaining - overhead - 50
@@ -184,8 +239,9 @@ def read_vault_files(matches, char_budget, max_files=5):
             truncated = body[:available] + "\n[...truncated, see full file in vault]"
             parts.append(f"{header}{truncated}{footer}")
             remaining = 0
+            injected.append(fp)
 
-    return "\n\n".join(parts)
+    return "\n\n".join(parts), injected
 
 
 # --- Output Building ---
@@ -195,11 +251,11 @@ MCR_FOOTER = "[End MCR context]"
 
 
 def build_context_string(matches, char_budget):
-    """Build the full additionalContext string from matches."""
-    content = read_vault_files(matches, char_budget)
+    """Build the full additionalContext string from matches. Returns (context_string, injected_files)."""
+    content, injected = read_vault_files(matches, char_budget)
     if not content:
-        return ""
-    return f"{MCR_HEADER}\n\n{content}\n\n{MCR_FOOTER}"
+        return "", []
+    return f"{MCR_HEADER}\n\n{content}\n\n{MCR_FOOTER}", injected
 
 
 # --- Safe Hook I/O ---
