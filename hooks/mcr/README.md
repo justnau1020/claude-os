@@ -141,6 +141,8 @@ MCR needs: a folder of markdown files and 4 Python scripts.
 
 At <500 files, keyword matching with weighted frontmatter is fast and accurate enough. When you outgrow it, swap the matcher for embeddings — the hook architecture stays the same.
 
+**Bonus: token efficiency.** Every vault injection that answers a question before Claude searches for it prevents an entire Explore agent or grep chain from spawning — 50k+ tokens that never enter any context. Claude Code's API reinjects the full conversation every call, so tokens compound. MCR cuts entire branches off that compounding tree.
+
 ## Rebuilding the Index
 
 After any vault changes:

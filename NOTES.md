@@ -47,6 +47,19 @@ When you spin up an agent team, spawn a dedicated watchdog agent alongside it. T
 **The lean context framework.**
 Tips 2 through 5 above are pieces of a single idea that changed how I work. I call it the lean context framework, and the formalized version lives in the [framework directory](./framework/). The short version: your main Claude Code session is a team lead. It understands what you want, decides who does the work, and keeps summaries. It never reads files, never writes code, never runs tests. Every task -- even a quick file check -- gets delegated to a subagent or agent team that works in its own context. The result comes back as a summary, not raw output. This means your main context stays small, focused, and high-quality for the entire session. I've had 3-hour sessions stay sharp because the main context never exceeded a few hundred lines. Before this pattern, quality would degrade after 30 minutes. If you take one thing from these notes, take this.
 
+**Lean context is a token efficiency architecture, not just a quality pattern.**
+There's a mechanical reason the lean context framework works so well, and I didn't understand it until I noticed I wasn't hitting the token walls everyone else was complaining about. Claude Code's API is stateless -- every API call reinjects the entire conversation history. Token cost doesn't grow linearly. It compounds. A main context that stays at ~100k tokens over 20 turns costs ~2M input tokens total. A main context that balloons to 500k over those same 20 turns averages ~275k per call -- 5.5M tokens. Same session, same number of turns, more than double the cost. The lean context pattern doesn't just keep quality high -- it burns less than half the tokens.
+
+Three mechanisms drive this:
+
+1. **Subagents are compression layers.** A subagent does 200k tokens of exploration -- file reads, greps, web searches -- and returns a 2k summary. The main context only ever sees the summary. That 198k of raw output lives and dies in the subagent's isolated context, never compounding in the main window.
+
+2. **MCR prevents entire search branches.** When the hook injects vault context that answers a question before Claude starts searching, it doesn't save a few tokens on a grep -- it prevents an entire Explore agent from spawning. That's 50k+ tokens that never enter any context, main or sub. Not a marginal savings. An eliminated branch of the token tree.
+
+3. **Failed subagents fail cheap.** A subagent that goes down the wrong research path burns tokens in a disposable context that gets discarded. Without delegation, that same wrong path bloats the main context permanently -- you can't un-read those files, and the wasted tokens compound on every subsequent API call for the rest of the session.
+
+This is why people running lean-context workflows don't experience the "sudden quality cliff" or token exhaustion others hit after an hour. It's not just better work -- it's structurally cheaper work. The architecture accidentally optimizes for the thing Claude Code is worst at: long-lived session efficiency.
+
 ---
 
 These notes will grow as I learn more. If you want the formalized version, check out the [framework](./framework/). If you want to see the skills these patterns produced, browse the [skills](./skills/) directory.

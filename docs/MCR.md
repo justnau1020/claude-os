@@ -8,7 +8,7 @@ priority: normal
 # MCR (Model Context Retrieval) System
 
 ## What It Is
-A hook-based system that automatically injects relevant knowledge into Claude Code conversations. Two-layer "subconscious brain" — Claude receives context without manually retrieving it. Built April 2026.
+A hook-based system that automatically injects relevant knowledge into Claude Code conversations. Two-layer "subconscious brain" — Claude receives context without manually retrieving it. Built April 2026. Secondary benefit: each vault injection that preempts a search prevents 50k+ tokens of exploration from entering any context, significantly reducing session token consumption.
 
 ## Architecture
 

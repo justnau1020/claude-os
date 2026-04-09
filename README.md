@@ -42,6 +42,7 @@ Every task — coding, research, exploration, testing, even reading files — ge
 - You can run longer sessions without hitting context limits
 - You can chain multiple skills in one session (`/brainstorm` → `/plan-features` → `/exec-plan`)
 - Each delegated agent gets a fresh, focused context window
+- **You burn dramatically fewer tokens.** Claude Code's API reinjects the full conversation every call. A 500k context over 20 turns costs ~5.5M input tokens. A lean 100k context over the same 20 turns costs ~2M. Subagents act as compression layers — they do 200k of work and return 2k summaries. Combined with MCR (which prevents entire search branches from spawning), this architecture cuts token usage by more than half while producing better results. [Details in NOTES.md →](./NOTES.md)
 
 The framework lives in `framework/` and includes:
 - **`CLAUDE.md`** — Drop-in template for your project's `.claude/CLAUDE.md`. Includes the agent execution model, file ownership template, and code conventions template.
@@ -148,9 +149,11 @@ After installing, customize:
 
 ## Usage and Token Budget
 
-### Know your budget before you start
+### The framework saves tokens by design
 
-This framework is optimized for **high-throughput usage** (Anthropic Max plan with 20x token budget, or equivalent). The lean-context pattern helps on any plan, but some skills are inherently token-intensive.
+This framework is optimized for **high-throughput usage** (Anthropic Max plan with 20x token budget, or equivalent), but the lean-context pattern actively reduces token consumption on any plan. Claude Code's API is stateless — every call reinjects the full conversation. A growing main context means each turn costs more than the last, compounding over the session. By keeping the main context lean (~100k) and delegating heavy work to subagents that return summaries, you avoid this quadratic growth. MCR amplifies the savings by injecting vault knowledge before Claude searches for it, preventing entire subagent spawns (50k+ tokens each). The result: sessions that are both higher quality and structurally cheaper than the default "do everything in one context" approach.
+
+Some skills are inherently token-intensive — here's what to expect:
 
 ### Token intensity by skill tier
 
